@@ -35,6 +35,7 @@ private:
 	point_type RearAxleToLidar(const point_type& point);
 	float pure_pursuit(point_type goal_point);
 	point_type get_plan_at_lookahead(const std::vector<point_type>& Plan);
+	float get_speed(const std::vector<point_type>& Plan);
 
 	void Polylinize(std::vector<segment_type>& OutLineSegments, float DiscontinuityThreshold); // Convert raw distances to line segments
 	bool GetSegment(SegmentFloat& OutSegment, float& OutStartAngle, float StepAngle, float DiscontinuityThreshold);

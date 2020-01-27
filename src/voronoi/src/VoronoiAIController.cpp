@@ -44,6 +44,7 @@ std::pair<double,double> AVoronoiAIController::GetSpeedAndSteering(std::vector<f
 		PurePursuitGoal = get_plan_at_lookahead(Plan);
 	}
 	float steering_ratio = pure_pursuit(PurePursuitGoal);
+	float speed = get_speed(Plan);
 
 	// Visualizations
 	// DrawLaser();
@@ -52,7 +53,7 @@ std::pair<double,double> AVoronoiAIController::GetSpeedAndSteering(std::vector<f
 	DrawPlan(Plan);
 	DrawPurepursuit(PurePursuitGoal);
 
-	return std::pair<float,float>(0.1, steering_ratio);
+	return std::pair<float,float>(speed, steering_ratio);
 }
 
 
@@ -99,6 +100,11 @@ float AVoronoiAIController::pure_pursuit(point_type goal_point)
 		return 1.f;
 	else
 		return 1.0 - ((steering_angle_deg + max_turn_degrees) / (2 * max_turn_degrees));
+}
+
+float AVoronoiAIController::get_speed(const std::vector<point_type>& Plan)
+{
+	return 0.45;
 }
 
 /// Assumes that orientation of lidar's frame and the rear axle's frame are the same
@@ -303,7 +309,7 @@ float AVoronoiAIController::DistanceToLine(PointFloat point, PointFloat p0, Poin
 void AVoronoiAIController::DrawWalls()
 {
 	visualization_msgs::Marker line_list;
-	line_list.header.frame_id = "/base_laser";
+	line_list.header.frame_id = "/laser";
 	line_list.header.stamp = ros::Time::now();
 	line_list.ns = "points_and_lines";
 	line_list.action = visualization_msgs::Marker::ADD;
@@ -337,7 +343,7 @@ void AVoronoiAIController::DrawRoadmap()
 	Planner.GetRoadmapSegments(segments);
 
 	visualization_msgs::Marker line_list;
-	line_list.header.frame_id = "/base_laser";
+	line_list.header.frame_id = "/laser";
 	line_list.header.stamp = ros::Time::now();
 	line_list.ns = "points_and_lines";
 	line_list.action = visualization_msgs::Marker::ADD;
@@ -370,7 +376,7 @@ void AVoronoiAIController::DrawPlan(const std::vector<point_type>& Plan)
 		return;
 	
 	visualization_msgs::Marker line_strip;
-	line_strip.header.frame_id = "/base_laser";
+	line_strip.header.frame_id = "/laser";
 	line_strip.header.stamp = ros::Time::now();
 	line_strip.ns = "points_and_lines";
 	line_strip.action = visualization_msgs::Marker::ADD;
@@ -399,7 +405,7 @@ void AVoronoiAIController::DrawPlan(const std::vector<point_type>& Plan)
 void AVoronoiAIController::DrawPurepursuit(const point_type& goal)
 {
 	visualization_msgs::Marker points;
-	points.header.frame_id = "/base_laser";
+	points.header.frame_id = "/laser";
 	points.header.stamp = ros::Time::now();
 	points.ns = "points_and_lines";
 	points.action = visualization_msgs::Marker::ADD;
@@ -413,9 +419,10 @@ void AVoronoiAIController::DrawPurepursuit(const point_type& goal)
 	points.color.r = 1.0;
    	points.color.a = 1.0;
 
+	point_type goal_lidar = RearAxleToLidar(goal);
 	geometry_msgs::Point p;
-	p.x = goal.x();
-	p.y = goal.y();
+	p.x = goal_lidar.x();
+	p.y = goal_lidar.y();
 	p.z = 0.f;
 	points.points.push_back(p);
 
@@ -423,7 +430,7 @@ void AVoronoiAIController::DrawPurepursuit(const point_type& goal)
 
 	// Draw the lookahead circle around the rear axle
 	visualization_msgs::Marker marker;
-    marker.header.frame_id = "/base_laser";
+    marker.header.frame_id = "/laser";
     marker.header.stamp = ros::Time::now();
     marker.ns = "basic_shapes";
     marker.id = 0;
