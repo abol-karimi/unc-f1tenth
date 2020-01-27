@@ -49,7 +49,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "voronoi_controller");
     ManageROS manageROS;
 
-    // Capture Ctr+C and stop the car.
+    // Capture Ctr+C to stop the car.
     signal(SIGINT, signal_handler);
     shutdown_handler = [manageROS](int sig)
     {

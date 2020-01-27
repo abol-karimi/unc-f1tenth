@@ -5,6 +5,11 @@
 #include <ostream>
 #include <boost/math/constants/constants.hpp>
 
+AVoronoiAIController::AVoronoiAIController()
+{
+	marker_pub = ros_node.advertise<visualization_msgs::Marker>("visualization_marker", 10);
+}
+
 std::pair<double,double> AVoronoiAIController::GetSpeedAndSteering(std::vector<float> ranges)
 {
 	Distances = ranges;
@@ -40,20 +45,14 @@ std::pair<double,double> AVoronoiAIController::GetSpeedAndSteering(std::vector<f
 	}
 	float steering_ratio = pure_pursuit(PurePursuitGoal);
 
-	return std::pair<float,float>(0.45, steering_ratio);
-
 	// Visualizations
 	// DrawLaser();
-	// DrawWalls();
-	// DrawRoadmap();
-	// DrawPlan(Plan);
-	// // visualize the purepusuit goalpoint
-	// DrawDebugSphere(GetWorld(), LidarToWorldLocation(RearAxleToLidar(PurePursuitGoal)),
-	// 	9.f, 5.f, FColor(100, 10, 10), false, 0.f, 30.f, 2.2f);
-	// // Draw circle corresponding to pure_pursuit lookahead distance (to rear axle)
-	// DrawDebugCircle(GetWorld(),
-	// 	LidarToWorldLocation(RearAxleToLidar(point_type(0.f, 0.f))),
-	// 	PurepursuitLookahead*100.f, 72, FColor(0, 0, 0), false, 0.f, 30, 2.f, FVector(0, 1, 0), FVector(1, 0, 0));
+	DrawWalls();
+	DrawRoadmap();
+	DrawPlan(Plan);
+	DrawPurepursuit(PurePursuitGoal);
+
+	return std::pair<float,float>(0.1, steering_ratio);
 }
 
 
@@ -105,13 +104,13 @@ float AVoronoiAIController::pure_pursuit(point_type goal_point)
 /// Assumes that orientation of lidar's frame and the rear axle's frame are the same
 point_type AVoronoiAIController::LidarToRearAxle(const point_type& point)
 {
-	return point_type(point.x() + 0.4, point.y()); // TODO: replace 0.4 with a member variable
+	return point_type(point.x() + lidar_to_rearAxle, point.y());
 }
 
 /// Assumes that orientation of lidar's frame and the rear axle's frame are the same
 point_type AVoronoiAIController::RearAxleToLidar(const point_type& point)
 {
-	return point_type(point.x() - 0.4, point.y()); // TODO: replace 0.4 with a member variable
+	return point_type(point.x() - lidar_to_rearAxle, point.y());
 }
 
 void AVoronoiAIController::Polylinize(std::vector<segment_type>& OutLineSegments, float DiscontinuityThreshold)
@@ -134,7 +133,7 @@ void AVoronoiAIController::Polylinize(std::vector<segment_type>& OutLineSegments
 			y1 = NewSegment.p0.y;
 			x2 = NewSegment.p1.x;
 			y2 = NewSegment.p1.y;
-			OutLineSegments.push_back(segment_type(point_type(x1, y1), point_type(x2, y2))); // TODO what lp and hp? Any requiremtns on the order of points?
+			OutLineSegments.push_back(segment_type(point_type(x1, y1), point_type(x2, y2)));
 		}
 	}
 }
@@ -285,12 +284,6 @@ float AVoronoiAIController::DistanceToLine(PointFloat point, PointFloat p0, Poin
 
 
 
-
-
-
-
-
-
 // void AVoronoiAIController::DrawLaser()
 // {
 // 	std::vector<point_type> points;
@@ -307,44 +300,153 @@ float AVoronoiAIController::DistanceToLine(PointFloat point, PointFloat p0, Poin
 // 	}	
 // }
 
-// void AVoronoiAIController::DrawWalls()
-// {
-// 	for (auto& wall : Walls)
-// 	{
-// 		DrawDebugLine(
-// 			GetWorld(),
-// 			LidarToWorldLocation(wall.low()),
-// 			LidarToWorldLocation(wall.high()), FColor(0, 255, 0), false, 0.f, 1.f, 10.f);
-// 	}
-// }
+void AVoronoiAIController::DrawWalls()
+{
+	visualization_msgs::Marker line_list;
+	line_list.header.frame_id = "/base_laser";
+	line_list.header.stamp = ros::Time::now();
+	line_list.ns = "points_and_lines";
+	line_list.action = visualization_msgs::Marker::ADD;
+	line_list.pose.orientation.w = 1.0;
+	line_list.id = 0;
+	line_list.type = visualization_msgs::Marker::LINE_LIST;
+	// Line width
+	line_list.scale.x = 0.1;
+    // Walls are green
+    line_list.color.g = 1.0;
+   	line_list.color.a = 1.0;
 
-// void AVoronoiAIController::DrawRoadmap()
-// {
-// 	std::list<point_type> points;
-// 	Planner.GetRoadmapPoints(points);
-// 	for (const point_type& point : points)
-// 	{
-// 		DrawDebugSphere(GetWorld(), LidarToWorldLocation(point),
-// 			15.f, 5.f, FColor(0, 0, 0), false, 0.f, 10.f, 1.f);
-// 	}
-// 	std::vector<segment_type> segments;
-// 	Planner.GetRoadmapSegments(segments);
-// 	for (const segment_type& segment : segments)
-// 	{
-// 		DrawDebugLine(GetWorld(), LidarToWorldLocation(segment.low()), LidarToWorldLocation(segment.high()),
-// 			FColor(64, 64, 255), false, 0.f, 5.f, 10.f);
-// 	}
-// }
+	for (auto& wall : Walls)
+	{
+		geometry_msgs::Point p0, p1;
+		p0.x = wall.low().x();
+		p0.y = wall.low().y();
+		p0.z = 0.f;
+		p1.x = wall.high().x();
+		p1.y = wall.high().y();
+		p1.z = 0.f;
+		line_list.points.push_back(p0);
+		line_list.points.push_back(p1);
+	}
+	marker_pub.publish(line_list);
+}
 
-// void AVoronoiAIController::DrawPlan(std::vector<point_type>& Plan)
-// {
-// 	if (Plan.size() > 1)
-// 	{
-// 		for (auto si = Plan.begin(); si != Plan.end() - 1; ++si)
-// 		{
-// 			DrawDebugLine(GetWorld(),
-// 				LidarToWorldLocation(*si), LidarToWorldLocation(*(si + 1)), 
-// 				FColor(255, 255, 255), false, 0.f, 20.f, 7.f);
-// 		}
-// 	}
-// }
+void AVoronoiAIController::DrawRoadmap()
+{
+	std::vector<segment_type> segments;
+	Planner.GetRoadmapSegments(segments);
+
+	visualization_msgs::Marker line_list;
+	line_list.header.frame_id = "/base_laser";
+	line_list.header.stamp = ros::Time::now();
+	line_list.ns = "points_and_lines";
+	line_list.action = visualization_msgs::Marker::ADD;
+	line_list.pose.orientation.w = 1.0;
+	line_list.id = 1;
+	line_list.type = visualization_msgs::Marker::LINE_LIST;
+	// Line width
+	line_list.scale.x = 0.3;
+    // Roadplan is black
+   	line_list.color.a = 1.0;
+
+	for (const segment_type& segment : segments)
+	{
+		geometry_msgs::Point p0, p1;
+		p0.x = segment.low().x();
+		p0.y = segment.low().y();
+		p0.z = 0.f;
+		p1.x = segment.high().x();
+		p1.y = segment.high().y();
+		p1.z = 0.f;
+		line_list.points.push_back(p0);
+		line_list.points.push_back(p1);
+	}
+	marker_pub.publish(line_list);
+}
+
+void AVoronoiAIController::DrawPlan(const std::vector<point_type>& Plan)
+{
+	if (Plan.size() == 0)
+		return;
+	
+	visualization_msgs::Marker line_strip;
+	line_strip.header.frame_id = "/base_laser";
+	line_strip.header.stamp = ros::Time::now();
+	line_strip.ns = "points_and_lines";
+	line_strip.action = visualization_msgs::Marker::ADD;
+	line_strip.pose.orientation.w = 1.0;
+	line_strip.id = 2;
+	line_strip.type = visualization_msgs::Marker::LINE_STRIP;
+	// Line width
+	line_strip.scale.x = 0.1;
+    // Plan is white
+	line_strip.color.r = 1.0;
+	line_strip.color.g = 1.0;
+    line_strip.color.b = 1.0;
+   	line_strip.color.a = 1.0;
+
+	for (auto& point : Plan)
+	{
+		geometry_msgs::Point p;
+		p.x = point.x();
+		p.y = point.y();
+		p.z = 0.f;
+		line_strip.points.push_back(p);
+	}
+	marker_pub.publish(line_strip);
+}
+
+void AVoronoiAIController::DrawPurepursuit(const point_type& goal)
+{
+	visualization_msgs::Marker points;
+	points.header.frame_id = "/base_laser";
+	points.header.stamp = ros::Time::now();
+	points.ns = "points_and_lines";
+	points.action = visualization_msgs::Marker::ADD;
+	points.pose.orientation.w = 1.0;
+	points.id = 3;
+	points.type = visualization_msgs::Marker::POINTS;
+	// point width/height
+	points.scale.x = 0.3;
+	points.scale.y = 0.3;
+    // Goalpoint is red
+	points.color.r = 1.0;
+   	points.color.a = 1.0;
+
+	geometry_msgs::Point p;
+	p.x = goal.x();
+	p.y = goal.y();
+	p.z = 0.f;
+	points.points.push_back(p);
+
+	marker_pub.publish(points);
+
+	// Draw the lookahead circle around the rear axle
+	visualization_msgs::Marker marker;
+    marker.header.frame_id = "/base_laser";
+    marker.header.stamp = ros::Time::now();
+    marker.ns = "basic_shapes";
+    marker.id = 0;
+    marker.type = visualization_msgs::Marker::SPHERE;
+    marker.action = visualization_msgs::Marker::ADD;
+    // Set the pose of the marker.  This is a full 6DOF pose relative to the frame/time specified in the header
+    marker.pose.position.x = -lidar_to_rearAxle; // TODO: change the constant to a member variable
+    marker.pose.position.y = 0;
+    marker.pose.position.z = 0;
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+    // Set the scale of the marker -- 1x1x1 here means 1m on a side
+    marker.scale.x = PurepursuitLookahead*2.f;
+    marker.scale.y = PurepursuitLookahead*2.f;
+    marker.scale.z = 0.01;
+    // Set the color -- be sure to set alpha to something non-zero!
+    marker.color.r = 0.5f;
+    marker.color.g = 0.5f;
+    marker.color.b = 0.5f;
+    marker.color.a = 0.3;
+
+	marker_pub.publish(marker);
+
+}
