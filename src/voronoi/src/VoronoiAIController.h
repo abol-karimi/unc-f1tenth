@@ -46,9 +46,9 @@ private:
 
 	// Controller properties
 	float MinTrackWidth = 1.5; // in meters
-	float PurepursuitLookahead = 1.2; // Distance (in meters) between the rear axel and the goal point
+	float PurepursuitLookahead = 1.5; // Distance (in meters) between the rear axel and the goal point
 	float allowed_obs_dist = 0.3f; // in meters
-	float discontinuity_threshold = 0.7f;
+	float discontinuity_threshold = 0.5f;
 
 	// Vehicle properties
 	float wheelbase = 0.3; // Distance (in meters) of rear axle to front axel
@@ -67,7 +67,7 @@ private:
 	float LidarMaxDegree = 135; // (LidarMaxDegree - LidarMinDegree)*AngularResolution + 1 = 1081
 	std::vector<float> Distances;
 
-	// Visualizations (in base_laser frame)
+	// Visualizations (in laser frame)
 	// void DrawLaser();
 	void DrawWalls();
 	void DrawRoadmap();

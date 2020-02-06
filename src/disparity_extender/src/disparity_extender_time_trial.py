@@ -40,11 +40,11 @@ class DisparityExtenderDriving(object):
         self.max_turn_angle = 34.0
         # The slowest speed the car will go
         # Good value here is 0.1
-        self.min_speed = 0.3
+        self.min_speed = 0.05
         # The maximum speed the car will go (the absolute max for the motor is
         # 0.5, which is *very* fast). 0.15 is a good max for slow testing.
-        self.max_speed = 0.35 #.20
-        self.absolute_max_speed = 0.4 # 0.3
+        self.max_speed = 0.15 #.20
+        self.absolute_max_speed = 0.2 # 0.3
         # The forward distance at which the car will go its minimum speed.
         # If there's not enough clearance in front of the car it will stop.
         self.min_distance = 0.35

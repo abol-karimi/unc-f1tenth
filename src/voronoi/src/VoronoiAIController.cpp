@@ -104,7 +104,7 @@ float AVoronoiAIController::pure_pursuit(point_type goal_point)
 
 float AVoronoiAIController::get_speed(const std::vector<point_type>& Plan)
 {
-	return 0.45;
+	return 0.1;
 }
 
 /// Assumes that orientation of lidar's frame and the rear axle's frame are the same
@@ -125,7 +125,7 @@ void AVoronoiAIController::Polylinize(std::vector<segment_type>& OutLineSegments
 
 	SegmentFloat NewSegment(0, 0, 10, 10);
 	float NewStartAngle = -135;
-	float StepAngle = 2; // Unit is degrees.
+	float StepAngle = 1; // Unit is degrees.
 	while (NewStartAngle < 135)
 	{
 		// Search for segments counterclockwise starting from NewStartAngle.
@@ -455,5 +455,7 @@ void AVoronoiAIController::DrawPurepursuit(const point_type& goal)
     marker.color.a = 0.3;
 
 	marker_pub.publish(marker);
+
+	// TODO change chape to arrow and publish again
 
 }
