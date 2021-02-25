@@ -51,6 +51,7 @@ void VoronoiGraph::color_close_vertices(const VD& vd, const std::vector<segment_
 {
 	for (const auto& vertex : vd.vertices())
 		vertex.color(0);
+
 	for (const auto& vertex : vd.vertices())
 	{
 		point_type voronoi_point(vertex.x(), vertex.y());
@@ -71,6 +72,19 @@ void VoronoiGraph::color_close_vertices(const VD& vd, const std::vector<segment_
 
 void VoronoiGraph::MakeRoadmap(const std::vector<segment_type>& Walls, float allowed_obs_dist)
 {
+	// Map each wall to its connected component
+	std::vector<int> component(Walls.size(), 0);
+	for (size_t i = 1; i < Walls.size(); ++i)
+	{
+		if (boost::polygon::euclidean_distance(Walls[i-1].high(), Walls[i].low()) < 0.001)
+		{
+			component[i] = component[i-1];
+		} else {
+			component[i] = component[i-1] + 1;
+		}
+	}
+
+
 	this->allowed_obs_dist = allowed_obs_dist;
 	// Clear the previous roadmap
 	Roadmap.clear();
@@ -103,6 +117,10 @@ void VoronoiGraph::MakeRoadmap(const std::vector<segment_type>& Walls, float all
 	{
 		if (!edge.is_primary())
 			continue;
+		if (component[edge.cell()->source_index()] == component[edge.twin()->cell()->source_index()]){
+			continue;
+		}
+		
 		if (edge.is_finite() && edge.vertex0()->color() == 0 && edge.vertex1()->color() == 0)
 		{
 			if (edge.is_linear()) 
