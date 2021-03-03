@@ -20,7 +20,7 @@ public:
     void LaserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
     {
         double speed, steering;
-        std::tie(speed, steering) = controller.GetSpeedAndSteering(msg->ranges); // Steeing in (-1.0, 1.0)
+        std::tie(speed, steering) = controller.GetSpeedAndSteering(msg); // Steeing in (-1.0, 1.0)
         Publish(speed, steering);  
 
     }

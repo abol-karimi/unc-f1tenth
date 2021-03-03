@@ -10,9 +10,14 @@ AVoronoiAIController::AVoronoiAIController()
 	marker_pub = ros_node.advertise<visualization_msgs::Marker>("visualization_marker", 10);
 }
 
-std::pair<double,double> AVoronoiAIController::GetSpeedAndSteering(std::vector<float> ranges)
+std::pair<double,double> AVoronoiAIController::GetSpeedAndSteering(const sensor_msgs::LaserScan::ConstPtr& msg)
 {
-	Distances = ranges;
+	float PI = boost::math::constants::pi<float>();
+	LidarMinDegree = msg->angle_min*180.f/PI;
+	LidarMaxDegree = msg->angle_max*180.f/PI;
+	AngularResolution = msg->angle_increment*180.f/PI;
+	Range = msg->range_max;
+	Distances = msg->ranges;
 
 	// Make a set of polylines out of lidar 2D point cloud.
 	Polylinize(Walls, discontinuity_threshold);
@@ -104,7 +109,7 @@ float AVoronoiAIController::pure_pursuit(point_type goal_point)
 
 float AVoronoiAIController::get_speed(const std::vector<point_type>& Plan)
 {
-	return 0.1;
+	return 0.2;
 }
 
 /// Assumes that orientation of lidar's frame and the rear axle's frame are the same
@@ -124,9 +129,9 @@ void AVoronoiAIController::Polylinize(std::vector<segment_type>& OutLineSegments
 	OutLineSegments.clear();
 
 	SegmentFloat NewSegment(0, 0, 10, 10);
-	float NewStartAngle = -135;
+	float NewStartAngle = LidarMinDegree;
 	float StepAngle = 1; // Unit is degrees.
-	while (NewStartAngle < 135)
+	while (NewStartAngle < LidarMaxDegree)
 	{
 		// Search for segments counterclockwise starting from NewStartAngle.
 		// GetSegment() updates NewStartAngle for the next search.
@@ -152,7 +157,7 @@ bool AVoronoiAIController::GetSegment(SegmentFloat& OutSegment, float& OutStartA
 	while (!GetPointAtAngle(StartPoint, StartAngle))
 	{
 		StartAngle += StepAngle;
-		if (StartAngle > 135)
+		if (StartAngle > LidarMaxDegree)
 		{
 			// OutStartAngle can be used for the next call to GetSegment. Here it is already out of bounds.
 			OutStartAngle = StartAngle;
@@ -185,7 +190,7 @@ bool AVoronoiAIController::GetSegment(SegmentFloat& OutSegment, float& OutStartA
 	// While-loop invariant:
 	//  If EndAngle and EndPoint are valid before the loop,
 	//  then they are valid after the loop.
-	while (CandidEndAngle + StepAngle <= 135)
+	while (CandidEndAngle + StepAngle <= LidarMaxDegree)
 	{
 		CandidEndAngle += StepAngle;
 		bool FoundNewPoint = GetPointAtAngle(CandidEndPoint, CandidEndAngle);
@@ -244,19 +249,15 @@ bool AVoronoiAIController::GetPointAtAngle(PointFloat& OutPoint, float angle_deg
 
 bool AVoronoiAIController::GetDistanceAtAngle(float& OutDistance, float angle_deg)
 {
-	// Linearly interpolate between (-135, 0) and (135, 1080) on the angle-index coordinates
-	// Slope is (1080-0)/(135-(-135)) = 1080/270
-	// Index-intercept is 1080/2 = 540
-	// Interpolation function is slope*angle_deg + intercept
 	if (angle_deg < LidarMinDegree || angle_deg > LidarMaxDegree)
 	{
 		return false;
 	}
-	int index = static_cast<int>(1080 * angle_deg / 270 + 540);
-	float Distance = Distances[index];
-	if (Distance < OutOfRange)
+
+	int index = floor((angle_deg - LidarMinDegree)/AngularResolution);
+	if (Distances[index] < OutOfRange)
 	{
-		OutDistance = Distance;
+		OutDistance = Distances[index];
 		return true;
 	}
 	else { return false; }
@@ -280,31 +281,6 @@ float AVoronoiAIController::DistanceToLine(PointFloat point, PointFloat p0, Poin
 	float numerator = abs(delta_y * point.x - delta_x * point.y + numerator_const_term);
 	return (numerator / denominator);
 }
-
-
-
-
-
-
-
-
-
-
-// void AVoronoiAIController::DrawLaser()
-// {
-// 	std::vector<point_type> points;
-// 	Lidar->GetLidarData(points);
-// 	for (const auto& point : points)
-// 	{
-// 		double distance = euclidean_distance(point, point_type(0.f, 0.f))*5.f;
-// 		point_type End = point;
-// 		point_type Start = point_type(point.x()/distance, point.y()/distance);
-// 		DrawDebugLine(GetWorld(), 
-// 			LidarToWorldLocation(Start), 
-// 			LidarToWorldLocation(End), 
-// 			FColor(255, 0, 0), false, 0.f, 0.f, 0.f);
-// 	}	
-// }
 
 void AVoronoiAIController::DrawWalls()
 {

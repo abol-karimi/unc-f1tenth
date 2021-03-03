@@ -6,6 +6,7 @@
 #include "VoronoiGraph.h"
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
+#include <sensor_msgs/LaserScan.h>
 
 // TODO: replace with boost types (geometry, polygon, or uBLAS::vector)
 struct PointFloat {
@@ -28,7 +29,7 @@ class AVoronoiAIController
 public:
 	AVoronoiAIController();
 	
-	std::pair<double,double> GetSpeedAndSteering(std::vector<float> ranges);
+	std::pair<double,double> GetSpeedAndSteering(const sensor_msgs::LaserScan::ConstPtr& msg);
 
 private:
 	point_type LidarToRearAxle(const point_type& point);
@@ -46,7 +47,7 @@ private:
 
 	// Controller properties
 	float MinTrackWidth = 1.5; // in meters
-	float PurepursuitLookahead = 1.5; // Distance (in meters) between the rear axel and the goal point
+	float PurepursuitLookahead = 1; // Distance (in meters) between the rear axel and the goal point
 	float allowed_obs_dist = 0.3f; // in meters
 	float discontinuity_threshold = 0.5f;
 
