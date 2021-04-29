@@ -40,8 +40,8 @@ private:
 
 	void Polylinize(std::vector<segment_type>& OutLineSegments, float DiscontinuityThreshold); // Convert raw distances to line segments
 	bool GetSegment(SegmentFloat& OutSegment, float& OutStartAngle, float StepAngle, float DiscontinuityThreshold);
-	bool GetPointAtAngle(PointFloat& OutPoint, float angle_deg); // Calculates the lidar point at angle_deg in Distances[1081] 
-	bool GetDistanceAtAngle(float& OutDistance, float angle_deg); // Returns the corresponding distance in Distances[1081] 
+	bool GetPointAtAngle(PointFloat& OutPoint, float angle_deg); // Calculates the lidar point at angle_deg
+	bool GetDistanceAtAngle(float& OutDistance, float angle_deg); // Returns the corresponding distance
 	float Distance(PointFloat p0, PointFloat p1);
 	float DistanceToLine(PointFloat point, PointFloat p0, PointFloat p1);
 
@@ -65,7 +65,7 @@ private:
 	float Range = 17; // Maximum detectable distance in meters
 	float OutOfRange = 65.533; // Value to return if distance > LidarRange
 	float LidarMinDegree = -135;
-	float LidarMaxDegree = 135; // (LidarMaxDegree - LidarMinDegree)*AngularResolution + 1 = 1081
+	float LidarMaxDegree = 135;
 	std::vector<float> Distances;
 
 	// Visualizations (in laser frame)
