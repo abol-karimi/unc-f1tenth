@@ -8,19 +8,6 @@
 #include <visualization_msgs/Marker.h>
 #include <sensor_msgs/LaserScan.h>
 
-// TODO: replace with boost types (geometry, polygon, or uBLAS::vector)
-struct PointFloat {
-	float x;
-	float y;
-	PointFloat(float x0, float y0) : x(x0), y(y0) {}
-};
-
-struct SegmentFloat {
-	PointFloat p0;
-	PointFloat p1;
-	SegmentFloat(float x1, float y1, float x2, float y2) : p0(x1, y1), p1(x2, y2) {}
-};
-
 /**
  * 
  */
@@ -37,13 +24,6 @@ private:
 	float pure_pursuit(point_type goal_point);
 	point_type get_plan_at_lookahead(const std::vector<point_type>& Plan);
 	float get_speed(const std::vector<point_type>& Plan);
-
-	void Polylinize(std::vector<segment_type>& OutLineSegments, float DiscontinuityThreshold); // Convert raw distances to line segments
-	bool GetSegment(SegmentFloat& OutSegment, float& OutStartAngle, float StepAngle, float DiscontinuityThreshold);
-	bool GetPointAtAngle(PointFloat& OutPoint, float angle_deg); // Calculates the lidar point at angle_deg
-	bool GetDistanceAtAngle(float& OutDistance, float angle_deg); // Returns the corresponding distance
-	float Distance(PointFloat p0, PointFloat p1);
-	float DistanceToLine(PointFloat point, PointFloat p0, PointFloat p1);
 
 	// Controller properties
 	float MinTrackWidth = 1.5; // in meters
