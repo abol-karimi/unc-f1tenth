@@ -3,7 +3,7 @@
 #pragma once
 
 #include <set>
-#include "VoronoiGraph.h"
+#include "VoronoiPlanner.h"
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <sensor_msgs/LaserScan.h>
@@ -37,7 +37,7 @@ private:
 	float lidar_to_rearAxle = 0.38;
 
 	// VoronoiGraph properties
-	VoronoiGraph Planner;
+	VoronoiPlanner Planner;
 	std::vector<segment_type> Walls;
 
 	// Lidar

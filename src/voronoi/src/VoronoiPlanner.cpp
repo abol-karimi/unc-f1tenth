@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "VoronoiGraph.h"
+#include "VoronoiPlanner.h"
 
 #include "voronoi_visual_utils.hpp"
 #include <boost/graph/graph_traits.hpp>
@@ -14,16 +14,16 @@
 
 #include <unordered_map>
 
-VoronoiGraph::VoronoiGraph()
+VoronoiPlanner::VoronoiPlanner()
 {
 }
 
-VoronoiGraph::~VoronoiGraph()
+VoronoiPlanner::~VoronoiPlanner()
 {
 }
 
 // Assumes that the Voronoi diagram has only input segments, i.e. no input points.
-point_type VoronoiGraph::retrieve_endpoint(const cell_type& cell, const std::vector<segment_type>& Walls)
+point_type VoronoiPlanner::retrieve_endpoint(const cell_type& cell, const std::vector<segment_type>& Walls)
 {
 	source_index_type index = cell.source_index();
 	source_category_type category = cell.source_category();
@@ -36,18 +36,18 @@ point_type VoronoiGraph::retrieve_endpoint(const cell_type& cell, const std::vec
 }
 
 // Assumes that the Voronoi diagram has only input segments, i.e. no input points.
-segment_type VoronoiGraph::retrieve_segment(const cell_type& cell, const std::vector<segment_type>& Walls) {
+segment_type VoronoiPlanner::retrieve_segment(const cell_type& cell, const std::vector<segment_type>& Walls) {
 	source_index_type index = cell.source_index();
 	return Walls[index];
 }
 
-void VoronoiGraph::sample_curved_edge(const edge_type& edge, std::vector<point_type>* sampled_edge, const std::vector<segment_type>& Walls) {
+void VoronoiPlanner::sample_curved_edge(const edge_type& edge, std::vector<point_type>* sampled_edge, const std::vector<segment_type>& Walls) {
 	point_type point = edge.cell()->contains_point() ? retrieve_endpoint(*edge.cell(), Walls) : retrieve_endpoint(*edge.twin()->cell(), Walls);
 	segment_type segment = edge.cell()->contains_point() ? retrieve_segment(*edge.twin()->cell(), Walls) : retrieve_segment(*edge.cell(), Walls);
 	boost::polygon::voronoi_visual_utils<coordinate_type>::discretize(point, segment, max_discretization_error*1000.f, sampled_edge);
 }
 
-void VoronoiGraph::color_close_vertices(const VD& vd, const std::vector<segment_type>& Walls)
+void VoronoiPlanner::color_close_vertices(const VD& vd, const std::vector<segment_type>& Walls)
 {
 	for (const auto& vertex : vd.vertices())
 		vertex.color(0);
@@ -70,7 +70,7 @@ void VoronoiGraph::color_close_vertices(const VD& vd, const std::vector<segment_
 	}
 }
 
-void VoronoiGraph::MakeRoadmap(const std::vector<segment_type>& Walls, float allowed_obs_dist)
+void VoronoiPlanner::MakeRoadmap(const std::vector<segment_type>& Walls, float allowed_obs_dist)
 {
 	// Map each wall to its connected component
 	std::vector<int> component(Walls.size(), 0);
@@ -133,7 +133,7 @@ void VoronoiGraph::MakeRoadmap(const std::vector<segment_type>& Walls, float all
 	add_finish_vertex();
 }
 
-VoronoiGraph::vertex_descriptor VoronoiGraph::add_roadmap_vertex(point_type point)
+VoronoiPlanner::vertex_descriptor VoronoiPlanner::add_roadmap_vertex(point_type point)
 {
 	vertex_descriptor newvertex = add_vertex(Roadmap);
 	coordinates_map_t coordinates_map = get(boost::vertex_coordinates, Roadmap);
@@ -141,14 +141,14 @@ VoronoiGraph::vertex_descriptor VoronoiGraph::add_roadmap_vertex(point_type poin
 	return newvertex;
 }
 
-VoronoiGraph::edge_descriptor VoronoiGraph::add_roadmap_edge(vertex_descriptor vertex0, vertex_descriptor vertex1)
+VoronoiPlanner::edge_descriptor VoronoiPlanner::add_roadmap_edge(vertex_descriptor vertex0, vertex_descriptor vertex1)
 {
 	coordinates_map_t coordinates_map = get(boost::vertex_coordinates, Roadmap);
 	double weight = euclidean_distance(coordinates_map[vertex0], coordinates_map[vertex1]);
 	return add_roadmap_edge(vertex0, vertex1, weight);
 }
 
-VoronoiGraph::edge_descriptor VoronoiGraph::add_roadmap_edge(vertex_descriptor vertex0, vertex_descriptor vertex1, double weight)
+VoronoiPlanner::edge_descriptor VoronoiPlanner::add_roadmap_edge(vertex_descriptor vertex0, vertex_descriptor vertex1, double weight)
 {
 	edge_descriptor roadmap_edge;
 	bool inserted;
@@ -159,7 +159,7 @@ VoronoiGraph::edge_descriptor VoronoiGraph::add_roadmap_edge(vertex_descriptor v
 }
 
 /// Assumes the roadmap vertices have been added before.
-void VoronoiGraph::add_linear_edge(const edge_type& edge, std::unordered_map<const vertex_type*, vertex_descriptor>& voronoi_to_roadmap)
+void VoronoiPlanner::add_linear_edge(const edge_type& edge, std::unordered_map<const vertex_type*, vertex_descriptor>& voronoi_to_roadmap)
 {
 	const vertex_descriptor roadmap_vertex0 = voronoi_to_roadmap.at(edge.vertex0());
 	const vertex_descriptor roadmap_vertex1 = voronoi_to_roadmap.at(edge.vertex1());
@@ -168,7 +168,7 @@ void VoronoiGraph::add_linear_edge(const edge_type& edge, std::unordered_map<con
 	add_roadmap_edge(roadmap_vertex0, roadmap_vertex1, euclidean_distance(p0, p1) / 1000.f);
 }
 
-void VoronoiGraph::add_curved_edge(const edge_type& edge, std::unordered_map<const vertex_type*, vertex_descriptor>& voronoi_to_roadmap, const std::vector<segment_type>& Walls_mm)
+void VoronoiPlanner::add_curved_edge(const edge_type& edge, std::unordered_map<const vertex_type*, vertex_descriptor>& voronoi_to_roadmap, const std::vector<segment_type>& Walls_mm)
 {
 	point_type vertex0(edge.vertex0()->x(), edge.vertex0()->y());
 	point_type vertex1(edge.vertex1()->x(), edge.vertex1()->y());
@@ -196,7 +196,7 @@ void VoronoiGraph::add_curved_edge(const edge_type& edge, std::unordered_map<con
 		add_roadmap_edge(vertices[i], vertices[i + 1], boost::polygon::euclidean_distance(samples[i], samples[i + 1]) / 1000.f);
 }
 
-void VoronoiGraph::add_start_vertex()
+void VoronoiPlanner::add_start_vertex()
 {
 	using namespace boost;
 	coordinates_map_t coordinates_map = get(vertex_coordinates, Roadmap);
@@ -216,12 +216,12 @@ void VoronoiGraph::add_start_vertex()
 	add_roadmap_edge(start_vertex, vertex1);
 }
 
-void VoronoiGraph::add_finish_vertex()
+void VoronoiPlanner::add_finish_vertex()
 {
 
 }
 
-void VoronoiGraph::GetRoadmapPoints(std::list<point_type>& points) // TODO: Change to vector and reserve space
+void VoronoiPlanner::GetRoadmapPoints(std::list<point_type>& points) // TODO: Change to vector and reserve space
 {
 	using namespace boost;
 	coordinates_map_t coordinates_map = get(vertex_coordinates, Roadmap);
@@ -234,7 +234,7 @@ void VoronoiGraph::GetRoadmapPoints(std::list<point_type>& points) // TODO: Chan
 	}
 }
 
-void VoronoiGraph::GetRoadmapSegments(std::vector<segment_type>& segments) // TODO: Change to vector and reserve space
+void VoronoiPlanner::GetRoadmapSegments(std::vector<segment_type>& segments) // TODO: Change to vector and reserve space
 {
 	using namespace boost;
 	coordinates_map_t coordinates_map = get(vertex_coordinates, Roadmap);
@@ -249,7 +249,7 @@ void VoronoiGraph::GetRoadmapSegments(std::vector<segment_type>& segments) // TO
 	}
 }
 
-VoronoiGraph::vertex_descriptor VoronoiGraph::get_closest_vertex(point_type point)
+VoronoiPlanner::vertex_descriptor VoronoiPlanner::get_closest_vertex(point_type point)
 {
 	using namespace boost;
 	coordinates_map_t coordinates_map = get(vertex_coordinates, Roadmap);
@@ -269,7 +269,7 @@ VoronoiGraph::vertex_descriptor VoronoiGraph::get_closest_vertex(point_type poin
 	return current_vertex;
 }
 
-VoronoiGraph::edge_descriptor VoronoiGraph::get_closest_edge(point_type point)
+VoronoiPlanner::edge_descriptor VoronoiPlanner::get_closest_edge(point_type point)
 {
 	using namespace boost;
 	coordinates_map_t coordinates_map = get(vertex_coordinates, Roadmap);
@@ -292,7 +292,7 @@ VoronoiGraph::edge_descriptor VoronoiGraph::get_closest_edge(point_type point)
 	return e_closest;
 }
 
-void VoronoiGraph::GetPlan(std::vector<point_type>& OutPlan, const std::vector<segment_type>& Walls)
+void VoronoiPlanner::GetPlan(std::vector<point_type>& OutPlan, const std::vector<segment_type>& Walls)
 {
 	point_type track_opening;
 	float steering_ratio = 0.f;
@@ -316,7 +316,7 @@ void VoronoiGraph::GetPlan(std::vector<point_type>& OutPlan, const std::vector<s
 	std::reverse(std::begin(OutPlan), std::end(OutPlan));
 }
 
-bool VoronoiGraph::get_trackopening(point_type& OutTrackOpening, const std::vector<segment_type>& Walls, double min_gap)
+bool VoronoiPlanner::get_trackopening(point_type& OutTrackOpening, const std::vector<segment_type>& Walls, double min_gap)
 {
 	std::vector<point_type> discontinuities;
 	double max_cos = -1; // The angle behind the car has cos=-1

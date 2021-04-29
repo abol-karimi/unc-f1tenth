@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "VoronoiGraph.h"
+#include "VoronoiPlanner.h"
 #include "Perception.h"
 #include <ostream>
 #include <boost/math/constants/constants.hpp>

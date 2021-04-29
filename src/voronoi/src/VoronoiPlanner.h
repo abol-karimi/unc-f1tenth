@@ -27,11 +27,11 @@ namespace boost {
 /**
  * 
  */
-class VoronoiGraph
+class VoronoiPlanner
 {
 public:
-	VoronoiGraph();
-	~VoronoiGraph();
+	VoronoiPlanner();
+	~VoronoiPlanner();
 	void MakeRoadmap(const std::vector<segment_type>& Walls, float allowed_obs_dist);
 	void GetPlan(std::vector<point_type>& OutPlan, const std::vector<segment_type>& Walls);
 	void GetRoadmapPoints(std::list<point_type>& points);
@@ -58,8 +58,8 @@ private:
 	typedef boost::adjacency_list < boost::vecS, boost::vecS, boost::undirectedS,
 		boost::property<boost::vertex_coordinates_t, point_type>,
 		boost::property<boost::edge_weight_t, float> > Roadmap_t;
-	typedef typename boost::graph_traits<VoronoiGraph::Roadmap_t>::vertex_descriptor vertex_descriptor;
-	typedef typename boost::graph_traits<VoronoiGraph::Roadmap_t>::edge_descriptor edge_descriptor;
+	typedef typename boost::graph_traits<VoronoiPlanner::Roadmap_t>::vertex_descriptor vertex_descriptor;
+	typedef typename boost::graph_traits<VoronoiPlanner::Roadmap_t>::edge_descriptor edge_descriptor;
 	typedef boost::property_map<Roadmap_t, boost::vertex_coordinates_t>::type coordinates_map_t; // The type of the mapping from a vertex descriptor to its coordiantes property
 	typedef boost::property_map<Roadmap_t, boost::edge_weight_t>::type weight_map_t;
 
@@ -81,6 +81,6 @@ private:
 	edge_descriptor add_roadmap_edge(vertex_descriptor vertex0, vertex_descriptor vertex1);
 	edge_descriptor add_roadmap_edge(vertex_descriptor vertex0, vertex_descriptor vertex1, double weight);
 	vertex_descriptor get_closest_vertex(point_type point);
-	VoronoiGraph::edge_descriptor get_closest_edge(point_type point);
+	VoronoiPlanner::edge_descriptor get_closest_edge(point_type point);
 };
 
