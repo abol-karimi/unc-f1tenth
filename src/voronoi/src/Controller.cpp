@@ -36,10 +36,6 @@ std::pair<double,double> Controller::GetSpeedAndSteering(const std::vector<point
 	float speed = get_speed(Plan);
 
 	// Visualizations
-	// DrawLaser();
-	DrawWalls();
-	// DrawRoadmap();
-	DrawPlan(Plan);
 	DrawPurepursuit(PurePursuitGoal);
 
 	return std::pair<float,float>(speed, steering_ratio);
@@ -106,102 +102,6 @@ point_type Controller::LidarToRearAxle(const point_type& point)
 point_type Controller::RearAxleToLidar(const point_type& point)
 {
 	return point_type(point.x() - lidar_to_rearAxle, point.y());
-}
-
-void Controller::DrawWalls()
-{
-	visualization_msgs::Marker line_list;
-	line_list.header.frame_id = "/laser";
-	line_list.header.stamp = ros::Time::now();
-	line_list.ns = "points_and_lines";
-	line_list.action = visualization_msgs::Marker::ADD;
-	line_list.pose.orientation.w = 1.0;
-	line_list.id = 0;
-	line_list.type = visualization_msgs::Marker::LINE_LIST;
-	// Line width
-	line_list.scale.x = 0.1;
-    // Walls are green
-    line_list.color.g = 1.0;
-   	line_list.color.a = 1.0;
-
-	for (auto& wall : Walls)
-	{
-		geometry_msgs::Point p0, p1;
-		p0.x = wall.low().x();
-		p0.y = wall.low().y();
-		p0.z = 0.f;
-		p1.x = wall.high().x();
-		p1.y = wall.high().y();
-		p1.z = 0.f;
-		line_list.points.push_back(p0);
-		line_list.points.push_back(p1);
-	}
-	marker_pub.publish(line_list);
-}
-
-// void Controller::DrawRoadmap()
-// {
-// 	std::vector<segment_type> segments;
-// 	Planner.GetRoadmapSegments(segments);
-
-// 	visualization_msgs::Marker line_list;
-// 	line_list.header.frame_id = "/laser";
-// 	line_list.header.stamp = ros::Time::now();
-// 	line_list.ns = "points_and_lines";
-// 	line_list.action = visualization_msgs::Marker::ADD;
-// 	line_list.pose.orientation.w = 1.0;
-// 	line_list.id = 1;
-// 	line_list.type = visualization_msgs::Marker::LINE_LIST;
-// 	// Line width
-// 	line_list.scale.x = 0.3;
-//     // Roadplan is black
-//    	line_list.color.a = 1.0;
-
-// 	for (const segment_type& segment : segments)
-// 	{
-// 		geometry_msgs::Point p0, p1;
-// 		p0.x = segment.low().x();
-// 		p0.y = segment.low().y();
-// 		p0.z = 0.f;
-// 		p1.x = segment.high().x();
-// 		p1.y = segment.high().y();
-// 		p1.z = 0.f;
-// 		line_list.points.push_back(p0);
-// 		line_list.points.push_back(p1);
-// 	}
-// 	marker_pub.publish(line_list);
-// }
-
-void Controller::DrawPlan(const std::vector<point_type>& Plan)
-{
-	if (Plan.size() == 0)
-		return;
-	
-	visualization_msgs::Marker line_strip;
-	line_strip.header.frame_id = "/laser";
-	line_strip.header.stamp = ros::Time::now();
-	line_strip.ns = "points_and_lines";
-	line_strip.action = visualization_msgs::Marker::ADD;
-	line_strip.pose.orientation.w = 1.0;
-	line_strip.id = 2;
-	line_strip.type = visualization_msgs::Marker::LINE_STRIP;
-	// Line width
-	line_strip.scale.x = 0.1;
-    // Plan is white
-	line_strip.color.r = 1.0;
-	line_strip.color.g = 1.0;
-    line_strip.color.b = 1.0;
-   	line_strip.color.a = 1.0;
-
-	for (auto& point : Plan)
-	{
-		geometry_msgs::Point p;
-		p.x = point.x();
-		p.y = point.y();
-		p.z = 0.f;
-		line_strip.points.push_back(p);
-	}
-	marker_pub.publish(line_strip);
 }
 
 void Controller::DrawPurepursuit(const point_type& goal)

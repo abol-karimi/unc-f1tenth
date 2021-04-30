@@ -28,7 +28,7 @@ class Perception
 public:
 	Perception();
 	
-	std::vector<segment_type>& GetWalls(const sensor_msgs::LaserScan::ConstPtr& msg);
+	const std::vector<segment_type>& GetWalls(const sensor_msgs::LaserScan::ConstPtr& msg);
 
 private:
 	void Polylinize(std::vector<segment_type>& OutLineSegments, float DiscontinuityThreshold); // Convert raw distances to line segments

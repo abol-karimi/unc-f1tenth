@@ -3,26 +3,23 @@
 #pragma once
 
 #include <vector>
-
-// THIRD_PARTY_INCLUDES_START
-// #pragma clang diagnostic push
-// #pragma clang diagnostic ignored "-Wreturn-std-move"
 #include <boost/polygon/polygon.hpp>
-// #pragma clang diagnostic pop
 #include <boost/polygon/voronoi.hpp>
-// THIRD_PARTY_INCLUDES_END
+
 typedef double coordinate_type;
 typedef boost::polygon::point_data<coordinate_type> point_type;
 typedef boost::polygon::segment_data<coordinate_type> segment_type;
 
-// THIRD_PARTY_INCLUDES_START
+
 #include <boost/graph/adjacency_list.hpp>
-// THIRD_PARTY_INCLUDES_END
+
 namespace boost {
 	enum vertex_coordinates_t { vertex_coordinates = 111 }; // a unique id for the type tag
 	BOOST_INSTALL_PROPERTY(vertex, coordinates);
 }
 
+#include <ros/ros.h>
+#include <visualization_msgs/Marker.h>
 
 /**
  * 
@@ -32,7 +29,7 @@ class VoronoiPlanner
 public:
 	VoronoiPlanner();
 	~VoronoiPlanner();
-	std::vector<point_type>& GetPlan(const std::vector<segment_type>& Walls, float allowed_obs_dist);
+	const std::vector<point_type>& GetPlan(const std::vector<segment_type>& Walls, float allowed_obs_dist, bool draw_roadmap=true);
 	void GetRoadmapPoints(std::list<point_type>& points);
 	void GetRoadmapSegments(std::vector<segment_type>& segments);
 
@@ -43,6 +40,7 @@ public:
 
 private:
 	void MakeRoadmap(const std::vector<segment_type>& Walls, float allowed_obs_dist);
+	void DrawRoadmap();
 
 	typedef boost::polygon::voronoi_diagram<coordinate_type> VD;
 	typedef VD::cell_type cell_type;
@@ -84,5 +82,8 @@ private:
 	edge_descriptor add_roadmap_edge(vertex_descriptor vertex0, vertex_descriptor vertex1, double weight);
 	vertex_descriptor get_closest_vertex(point_type point);
 	VoronoiPlanner::edge_descriptor get_closest_edge(point_type point);
+
+	ros::NodeHandle ros_node;
+	ros::Publisher marker_pub;
 };
 

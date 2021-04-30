@@ -16,10 +16,41 @@
 
 VoronoiPlanner::VoronoiPlanner()
 {
+	marker_pub = ros_node.advertise<visualization_msgs::Marker>("visualization_marker", 10);
 }
 
 VoronoiPlanner::~VoronoiPlanner()
 {
+}
+
+const std::vector<point_type>& VoronoiPlanner::GetPlan(const std::vector<segment_type>& Walls, float allowed_obs_dist, bool draw_roadmap)
+{
+	MakeRoadmap(Walls, allowed_obs_dist);
+	if (draw_roadmap)
+		DrawRoadmap();
+
+	point_type track_opening;
+	float steering_ratio = 0.f;
+	if (!get_trackopening(track_opening, Walls, min_track_width))
+		return Plan;
+	// shortest paths from source
+	std::vector<vertex_descriptor> pred(num_vertices(Roadmap));
+	std::vector<double> distances(num_vertices(Roadmap));
+	dijkstra_shortest_paths_no_color_map(Roadmap, start_vertex,
+		predecessor_map(boost::make_iterator_property_map(pred.begin(), get(boost::vertex_index, Roadmap))).
+		distance_map(boost::make_iterator_property_map(distances.begin(), get(boost::vertex_index, Roadmap))));
+
+	vertex_descriptor vertex = get_closest_vertex(track_opening), child;
+	coordinates_map_t coordinates_map = get(boost::vertex_coordinates, Roadmap);
+	do {
+		point_type point = get(coordinates_map, vertex);
+		Plan.push_back(point);
+		child = vertex;
+		vertex = pred[child];
+	} while (vertex != child);
+	std::reverse(std::begin(Plan), std::end(Plan));
+
+	return Plan;
 }
 
 // Assumes that the Voronoi diagram has only input segments, i.e. no input points.
@@ -73,7 +104,7 @@ void VoronoiPlanner::color_close_vertices(const VD& vd, const std::vector<segmen
 void VoronoiPlanner::MakeRoadmap(const std::vector<segment_type>& Walls, float allowed_obs_dist)
 {
 	this->allowed_obs_dist = allowed_obs_dist;
-	
+
 	// Map each wall to its connected component
 	std::vector<int> component(Walls.size(), 0);
 	for (size_t i = 1; i < Walls.size(); ++i)
@@ -292,34 +323,6 @@ VoronoiPlanner::edge_descriptor VoronoiPlanner::get_closest_edge(point_type poin
 	return e_closest;
 }
 
-std::vector<point_type>& VoronoiPlanner::GetPlan(const std::vector<segment_type>& Walls, float allowed_obs_dist)
-{
-	MakeRoadmap(Walls, allowed_obs_dist);
-
-	point_type track_opening;
-	float steering_ratio = 0.f;
-	if (!get_trackopening(track_opening, Walls, min_track_width))
-		return Plan;
-	// shortest paths from source
-	std::vector<vertex_descriptor> pred(num_vertices(Roadmap));
-	std::vector<double> distances(num_vertices(Roadmap));
-	dijkstra_shortest_paths_no_color_map(Roadmap, start_vertex,
-		predecessor_map(boost::make_iterator_property_map(pred.begin(), get(boost::vertex_index, Roadmap))).
-		distance_map(boost::make_iterator_property_map(distances.begin(), get(boost::vertex_index, Roadmap))));
-
-	vertex_descriptor vertex = get_closest_vertex(track_opening), child;
-	coordinates_map_t coordinates_map = get(boost::vertex_coordinates, Roadmap);
-	do {
-		point_type point = get(coordinates_map, vertex);
-		Plan.push_back(point);
-		child = vertex;
-		vertex = pred[child];
-	} while (vertex != child);
-	std::reverse(std::begin(Plan), std::end(Plan));
-
-	return Plan;
-}
-
 bool VoronoiPlanner::get_trackopening(point_type& OutTrackOpening, const std::vector<segment_type>& Walls, double min_gap)
 {
 	std::vector<point_type> discontinuities;
@@ -349,3 +352,35 @@ bool VoronoiPlanner::get_trackopening(point_type& OutTrackOpening, const std::ve
 	else { return false; }
 }
 
+void VoronoiPlanner::DrawRoadmap()
+{
+	std::vector<segment_type> segments;
+	GetRoadmapSegments(segments);
+
+	visualization_msgs::Marker line_list;
+	line_list.header.frame_id = "/laser";
+	line_list.header.stamp = ros::Time::now();
+	line_list.ns = "points_and_lines";
+	line_list.action = visualization_msgs::Marker::ADD;
+	line_list.pose.orientation.w = 1.0;
+	line_list.id = 1;
+	line_list.type = visualization_msgs::Marker::LINE_LIST;
+	// Line width
+	line_list.scale.x = 0.3;
+    // Roadplan is black
+   	line_list.color.a = 1.0;
+
+	for (const segment_type& segment : segments)
+	{
+		geometry_msgs::Point p0, p1;
+		p0.x = segment.low().x();
+		p0.y = segment.low().y();
+		p0.z = 0.f;
+		p1.x = segment.high().x();
+		p1.y = segment.high().y();
+		p1.z = 0.f;
+		line_list.points.push_back(p0);
+		line_list.points.push_back(p1);
+	}
+	marker_pub.publish(line_list);
+}

@@ -14,7 +14,7 @@ Perception::Perception()
 {
 }
 
-std::vector<segment_type>& Perception::GetWalls(const sensor_msgs::LaserScan::ConstPtr& msg)
+const std::vector<segment_type>& Perception::GetWalls(const sensor_msgs::LaserScan::ConstPtr& msg)
 {
 	float PI = boost::math::constants::pi<float>();
 	LidarMinDegree = msg->angle_min*180.f/PI;

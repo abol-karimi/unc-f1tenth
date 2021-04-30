@@ -26,24 +26,14 @@ private:
 	float get_speed(const std::vector<point_type>& Plan);
 
 	// Controller properties
-	float MinTrackWidth = 1.5; // in meters
 	float PurepursuitLookahead = 1; // Distance (in meters) between the rear axel and the goal point
-	float allowed_obs_dist = 0.3f; // in meters
-	float discontinuity_threshold = 0.5f;
 
 	// Vehicle properties
 	float wheelbase = 0.3; // Distance (in meters) of rear axle to front axel
 	float max_turn_degrees = 34;
 	float lidar_to_rearAxle = 0.38;
 
-	// VoronoiPlanner properties
-	std::vector<segment_type> Walls;
-
 	// Visualizations (in laser frame)
-	// void DrawLaser();
-	void DrawWalls();
-	// void DrawRoadmap();
-	void DrawPlan(const std::vector<point_type>& Plan);
 	void DrawPurepursuit(const point_type& goal);
 
 	ros::NodeHandle ros_node;
