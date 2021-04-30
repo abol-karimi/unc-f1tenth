@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "VoronoiAIController.h"
-#include "Perception.h"
 #include "voronoi_visual_utils.hpp"
 #include <ostream>
 #include <boost/math/constants/constants.hpp>
@@ -11,19 +10,8 @@ AVoronoiAIController::AVoronoiAIController()
 	marker_pub = ros_node.advertise<visualization_msgs::Marker>("visualization_marker", 10);
 }
 
-std::pair<double,double> AVoronoiAIController::GetSpeedAndSteering(const sensor_msgs::LaserScan::ConstPtr& msg)
+std::pair<double,double> AVoronoiAIController::GetSpeedAndSteering(const std::vector<segment_type>& Walls)
 {
-	float PI = boost::math::constants::pi<float>();
-	LidarMinDegree = msg->angle_min*180.f/PI;
-	LidarMaxDegree = msg->angle_max*180.f/PI;
-	AngularResolution = msg->angle_increment*180.f/PI;
-	Range = msg->range_max;
-	Distances = msg->ranges;
-
-	// Make a set of polylines out of lidar 2D point cloud.
-	Perception perception;
-	Walls = perception.GetWalls(msg);
-
 	// Get the plan as list of line segments and draw it
 	Planner.MakeRoadmap(Walls, allowed_obs_dist);
 

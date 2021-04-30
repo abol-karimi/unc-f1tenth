@@ -16,7 +16,7 @@ class AVoronoiAIController
 public:
 	AVoronoiAIController();
 	
-	std::pair<double,double> GetSpeedAndSteering(const sensor_msgs::LaserScan::ConstPtr& msg);
+	std::pair<double,double> GetSpeedAndSteering(const std::vector<segment_type>& Walls);
 
 private:
 	point_type LidarToRearAxle(const point_type& point);
@@ -36,17 +36,9 @@ private:
 	float max_turn_degrees = 34;
 	float lidar_to_rearAxle = 0.38;
 
-	// VoronoiGraph properties
+	// VoronoiPlanner properties
 	VoronoiPlanner Planner;
 	std::vector<segment_type> Walls;
-
-	// Lidar
-	float AngularResolution = 0.25; // 4 measurements per angle
-	float Range = 17; // Maximum detectable distance in meters
-	float OutOfRange = 65.533; // Value to return if distance > LidarRange
-	float LidarMinDegree = -135;
-	float LidarMaxDegree = 135;
-	std::vector<float> Distances;
 
 	// Visualizations (in laser frame)
 	// void DrawLaser();

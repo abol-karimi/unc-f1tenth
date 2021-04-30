@@ -4,6 +4,7 @@
 #include "ac_msgs/drive_params.h"
 
 #include "VoronoiAIController.h"
+#include "Perception.h"
 #include <ostream>
 #include <signal.h>
 #include <functional>
@@ -19,11 +20,15 @@ public:
 
     void LaserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
     {
-        double speed, steering;
-        std::tie(speed, steering) = controller.GetSpeedAndSteering(msg); // Steeing in (-1.0, 1.0)
-        Publish(speed, steering);  
+        // Make a set of polylines out of lidar 2D point cloud.
+        Perception perception;
+        const std::vector<segment_type>& walls = perception.GetWalls(msg);
 
+        double speed, steering;
+        std::tie(speed, steering) = controller.GetSpeedAndSteering(walls); // Steeing in (-1.0, 1.0)
+        Publish(speed, steering);
     }
+
     void Publish(double speed, double steering) const
     {
         ac_msgs::drive_params msg;
