@@ -72,6 +72,8 @@ void VoronoiPlanner::color_close_vertices(const VD& vd, const std::vector<segmen
 
 void VoronoiPlanner::MakeRoadmap(const std::vector<segment_type>& Walls, float allowed_obs_dist)
 {
+	this->allowed_obs_dist = allowed_obs_dist;
+	
 	// Map each wall to its connected component
 	std::vector<int> component(Walls.size(), 0);
 	for (size_t i = 1; i < Walls.size(); ++i)
@@ -84,8 +86,6 @@ void VoronoiPlanner::MakeRoadmap(const std::vector<segment_type>& Walls, float a
 		}
 	}
 
-
-	this->allowed_obs_dist = allowed_obs_dist;
 	// Clear the previous roadmap
 	Roadmap.clear();
 
@@ -292,12 +292,14 @@ VoronoiPlanner::edge_descriptor VoronoiPlanner::get_closest_edge(point_type poin
 	return e_closest;
 }
 
-void VoronoiPlanner::GetPlan(std::vector<point_type>& OutPlan, const std::vector<segment_type>& Walls)
+std::vector<point_type>& VoronoiPlanner::GetPlan(const std::vector<segment_type>& Walls, float allowed_obs_dist)
 {
+	MakeRoadmap(Walls, allowed_obs_dist);
+
 	point_type track_opening;
 	float steering_ratio = 0.f;
 	if (!get_trackopening(track_opening, Walls, min_track_width))
-		return;
+		return Plan;
 	// shortest paths from source
 	std::vector<vertex_descriptor> pred(num_vertices(Roadmap));
 	std::vector<double> distances(num_vertices(Roadmap));
@@ -309,11 +311,13 @@ void VoronoiPlanner::GetPlan(std::vector<point_type>& OutPlan, const std::vector
 	coordinates_map_t coordinates_map = get(boost::vertex_coordinates, Roadmap);
 	do {
 		point_type point = get(coordinates_map, vertex);
-		OutPlan.push_back(point);
+		Plan.push_back(point);
 		child = vertex;
 		vertex = pred[child];
 	} while (vertex != child);
-	std::reverse(std::begin(OutPlan), std::end(OutPlan));
+	std::reverse(std::begin(Plan), std::end(Plan));
+
+	return Plan;
 }
 
 bool VoronoiPlanner::get_trackopening(point_type& OutTrackOpening, const std::vector<segment_type>& Walls, double min_gap)

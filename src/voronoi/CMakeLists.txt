@@ -205,6 +205,6 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-add_executable(controller src/VoronoiPlanner.cpp src/VoronoiAIController.cpp src/controller.cpp src/Perception.cpp)
-target_link_libraries(controller ${catkin_LIBRARIES}) 
-add_dependencies(controller ${catkin_EXPORTED_TARGETS}) # to use ac_msgs
+add_executable(main src/VoronoiPlanner.cpp src/Controller.cpp src/main.cpp src/Perception.cpp)
+target_link_libraries(main ${catkin_LIBRARIES}) 
+add_dependencies(main ${catkin_EXPORTED_TARGETS}) # to use ac_msgs

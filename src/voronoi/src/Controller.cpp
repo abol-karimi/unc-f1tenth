@@ -1,23 +1,17 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "VoronoiAIController.h"
+#include "Controller.h"
 #include "voronoi_visual_utils.hpp"
 #include <ostream>
 #include <boost/math/constants/constants.hpp>
 
-AVoronoiAIController::AVoronoiAIController()
+Controller::Controller()
 {
 	marker_pub = ros_node.advertise<visualization_msgs::Marker>("visualization_marker", 10);
 }
 
-std::pair<double,double> AVoronoiAIController::GetSpeedAndSteering(const std::vector<segment_type>& Walls)
+std::pair<double,double> Controller::GetSpeedAndSteering(const std::vector<point_type>& Plan)
 {
-	// Get the plan as list of line segments and draw it
-	Planner.MakeRoadmap(Walls, allowed_obs_dist);
-
-	std::vector<point_type> Plan;
-	Planner.GetPlan(Plan, Walls);
-
 	point_type rear_axle = RearAxleToLidar(point_type(0.f, 0.f)); // Coordinates of rear axle in lidar's frame
 	point_type PurePursuitGoal; // Coordinates of the goal point in rear axle's frame
 	if (Plan.size() == 0)
@@ -44,7 +38,7 @@ std::pair<double,double> AVoronoiAIController::GetSpeedAndSteering(const std::ve
 	// Visualizations
 	// DrawLaser();
 	DrawWalls();
-	DrawRoadmap();
+	// DrawRoadmap();
 	DrawPlan(Plan);
 	DrawPurepursuit(PurePursuitGoal);
 
@@ -54,7 +48,7 @@ std::pair<double,double> AVoronoiAIController::GetSpeedAndSteering(const std::ve
 
 /// Assumes that Plan starts inside the lookahead circle and ends outside.
 /// The returned value is in rear_axle's coordinates.
-point_type AVoronoiAIController::get_plan_at_lookahead(const std::vector<point_type>& Plan)
+point_type Controller::get_plan_at_lookahead(const std::vector<point_type>& Plan)
 {
 	point_type rear_axle = RearAxleToLidar(point_type(0.f, 0.f)); // Plan is in lidar's coordinates
 	size_t end_index = 1;
@@ -78,7 +72,7 @@ point_type AVoronoiAIController::get_plan_at_lookahead(const std::vector<point_t
 /// Returns a steering "percentage" value between 0.0 (left) and 1.0
 /// 	(right) that is as close as possible to the requested degrees. The car's
 /// 	wheels can't turn more than max_turn_degrees in either direction.
-float AVoronoiAIController::pure_pursuit(point_type goal_point)
+float Controller::pure_pursuit(point_type goal_point)
 {
 	// goal_point is in rear axle's coordinates.
 	// goal_point must have a positive x coordinate.
@@ -97,24 +91,24 @@ float AVoronoiAIController::pure_pursuit(point_type goal_point)
 		return 1.0 - ((steering_angle_deg + max_turn_degrees) / (2 * max_turn_degrees));
 }
 
-float AVoronoiAIController::get_speed(const std::vector<point_type>& Plan)
+float Controller::get_speed(const std::vector<point_type>& Plan)
 {
 	return 0.2;
 }
 
 /// Assumes that orientation of lidar's frame and the rear axle's frame are the same
-point_type AVoronoiAIController::LidarToRearAxle(const point_type& point)
+point_type Controller::LidarToRearAxle(const point_type& point)
 {
 	return point_type(point.x() + lidar_to_rearAxle, point.y());
 }
 
 /// Assumes that orientation of lidar's frame and the rear axle's frame are the same
-point_type AVoronoiAIController::RearAxleToLidar(const point_type& point)
+point_type Controller::RearAxleToLidar(const point_type& point)
 {
 	return point_type(point.x() - lidar_to_rearAxle, point.y());
 }
 
-void AVoronoiAIController::DrawWalls()
+void Controller::DrawWalls()
 {
 	visualization_msgs::Marker line_list;
 	line_list.header.frame_id = "/laser";
@@ -145,40 +139,40 @@ void AVoronoiAIController::DrawWalls()
 	marker_pub.publish(line_list);
 }
 
-void AVoronoiAIController::DrawRoadmap()
-{
-	std::vector<segment_type> segments;
-	Planner.GetRoadmapSegments(segments);
+// void Controller::DrawRoadmap()
+// {
+// 	std::vector<segment_type> segments;
+// 	Planner.GetRoadmapSegments(segments);
 
-	visualization_msgs::Marker line_list;
-	line_list.header.frame_id = "/laser";
-	line_list.header.stamp = ros::Time::now();
-	line_list.ns = "points_and_lines";
-	line_list.action = visualization_msgs::Marker::ADD;
-	line_list.pose.orientation.w = 1.0;
-	line_list.id = 1;
-	line_list.type = visualization_msgs::Marker::LINE_LIST;
-	// Line width
-	line_list.scale.x = 0.3;
-    // Roadplan is black
-   	line_list.color.a = 1.0;
+// 	visualization_msgs::Marker line_list;
+// 	line_list.header.frame_id = "/laser";
+// 	line_list.header.stamp = ros::Time::now();
+// 	line_list.ns = "points_and_lines";
+// 	line_list.action = visualization_msgs::Marker::ADD;
+// 	line_list.pose.orientation.w = 1.0;
+// 	line_list.id = 1;
+// 	line_list.type = visualization_msgs::Marker::LINE_LIST;
+// 	// Line width
+// 	line_list.scale.x = 0.3;
+//     // Roadplan is black
+//    	line_list.color.a = 1.0;
 
-	for (const segment_type& segment : segments)
-	{
-		geometry_msgs::Point p0, p1;
-		p0.x = segment.low().x();
-		p0.y = segment.low().y();
-		p0.z = 0.f;
-		p1.x = segment.high().x();
-		p1.y = segment.high().y();
-		p1.z = 0.f;
-		line_list.points.push_back(p0);
-		line_list.points.push_back(p1);
-	}
-	marker_pub.publish(line_list);
-}
+// 	for (const segment_type& segment : segments)
+// 	{
+// 		geometry_msgs::Point p0, p1;
+// 		p0.x = segment.low().x();
+// 		p0.y = segment.low().y();
+// 		p0.z = 0.f;
+// 		p1.x = segment.high().x();
+// 		p1.y = segment.high().y();
+// 		p1.z = 0.f;
+// 		line_list.points.push_back(p0);
+// 		line_list.points.push_back(p1);
+// 	}
+// 	marker_pub.publish(line_list);
+// }
 
-void AVoronoiAIController::DrawPlan(const std::vector<point_type>& Plan)
+void Controller::DrawPlan(const std::vector<point_type>& Plan)
 {
 	if (Plan.size() == 0)
 		return;
@@ -210,7 +204,7 @@ void AVoronoiAIController::DrawPlan(const std::vector<point_type>& Plan)
 	marker_pub.publish(line_strip);
 }
 
-void AVoronoiAIController::DrawPurepursuit(const point_type& goal)
+void Controller::DrawPurepursuit(const point_type& goal)
 {
 	visualization_msgs::Marker points;
 	points.header.frame_id = "/laser";

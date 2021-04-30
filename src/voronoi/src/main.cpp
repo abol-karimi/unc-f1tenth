@@ -3,7 +3,7 @@
 // #include <std_msgs/Float64.h>
 #include "ac_msgs/drive_params.h"
 
-#include "VoronoiAIController.h"
+#include "Controller.h"
 #include "Perception.h"
 #include <ostream>
 #include <signal.h>
@@ -12,6 +12,8 @@
 class ManageROS
 {
 public:
+    float allowed_obs_dist = 0.3f; // in meters
+
     ManageROS()
     {
         sub = n.subscribe<sensor_msgs::LaserScan>("scan", 1, &ManageROS::LaserCallback, this);
@@ -24,8 +26,12 @@ public:
         Perception perception;
         const std::vector<segment_type>& walls = perception.GetWalls(msg);
 
+        VoronoiPlanner Planner;
+        // Get the plan as list of line segments
+        std::vector<point_type>& plan =	Planner.GetPlan(walls, allowed_obs_dist);
+
         double speed, steering;
-        std::tie(speed, steering) = controller.GetSpeedAndSteering(walls); // Steeing in (-1.0, 1.0)
+        std::tie(speed, steering) = controller.GetSpeedAndSteering(plan); // Steeing in (-1.0, 1.0)
         Publish(speed, steering);
     }
 
@@ -38,7 +44,7 @@ public:
         std::cout << "Published: speed: " << speed << "\t Steering: " << steering << std::endl;
     }
 private:
-    AVoronoiAIController controller;
+    Controller controller;
     ros::NodeHandle n;
     ros::Subscriber sub;
     ros::Publisher ac_pub;

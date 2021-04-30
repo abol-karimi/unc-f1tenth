@@ -11,12 +11,12 @@
 /**
  * 
  */
-class AVoronoiAIController
+class Controller
 {
 public:
-	AVoronoiAIController();
+	Controller();
 	
-	std::pair<double,double> GetSpeedAndSteering(const std::vector<segment_type>& Walls);
+	std::pair<double,double> GetSpeedAndSteering(const std::vector<point_type>& Plan);
 
 private:
 	point_type LidarToRearAxle(const point_type& point);
@@ -37,13 +37,12 @@ private:
 	float lidar_to_rearAxle = 0.38;
 
 	// VoronoiPlanner properties
-	VoronoiPlanner Planner;
 	std::vector<segment_type> Walls;
 
 	// Visualizations (in laser frame)
 	// void DrawLaser();
 	void DrawWalls();
-	void DrawRoadmap();
+	// void DrawRoadmap();
 	void DrawPlan(const std::vector<point_type>& Plan);
 	void DrawPurepursuit(const point_type& goal);
 

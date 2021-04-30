@@ -32,16 +32,18 @@ class VoronoiPlanner
 public:
 	VoronoiPlanner();
 	~VoronoiPlanner();
-	void MakeRoadmap(const std::vector<segment_type>& Walls, float allowed_obs_dist);
-	void GetPlan(std::vector<point_type>& OutPlan, const std::vector<segment_type>& Walls);
+	std::vector<point_type>& GetPlan(const std::vector<segment_type>& Walls, float allowed_obs_dist);
 	void GetRoadmapPoints(std::list<point_type>& points);
 	void GetRoadmapSegments(std::vector<segment_type>& segments);
 
+	std::vector<point_type> Plan;
 	double allowed_obs_dist; // in meters 
 	const double max_discretization_error = 0.3;
 	const double min_track_width = 1.5f;
 
 private:
+	void MakeRoadmap(const std::vector<segment_type>& Walls, float allowed_obs_dist);
+
 	typedef boost::polygon::voronoi_diagram<coordinate_type> VD;
 	typedef VD::cell_type cell_type;
 	typedef VD::cell_type::source_index_type source_index_type;
