@@ -2,6 +2,7 @@
 import rospy
 from std_msgs.msg import Bool
 import curses
+import time
 
 """
 The aim of this program is to listen for the spacebar being pressed
@@ -11,14 +12,13 @@ print("Emergency Stop Sender Initialized")
 rospy.init_node("emergency_stop_sender")
 pub = rospy.Publisher('eStop', Bool, queue_size=10)
 
-stdscr = curses.initscr() # Initialize curses
-curses.cbreak() # Don't require enter to be pressed before a read
-curses.noecho() # Don't echo keys to screen
-stdscr.keypad(1) # Enable curses key translation
+stdscr = curses.initscr()  # Initialize curses
+curses.cbreak()  # Don't require enter to be pressed before a read
+curses.noecho()  # Don't echo keys to screen
+stdscr.keypad(1)  # Enable curses key translation
 
 stdscr.addstr("STARTED LISTENING: EMERGENCY NOT TRIGGERED")
 stdscr.refresh()
-
 
 
 # Main listen loop
@@ -32,7 +32,7 @@ while True:
         curses.nocbreak()
         stdscr.keypad(0)
         curses.echo()
-        sleep(5)
+        time.sleep(5)
         curses.endwin()
         break
     else:
